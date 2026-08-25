@@ -1,6 +1,7 @@
 """Ollama implementation of the LLM provider interface."""
 
 import json
+from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from app.config import Settings, get_settings
@@ -38,6 +39,28 @@ class OllamaProvider(LLMProvider):
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urlopen(request, timeout=120) as response:
-            body = json.loads(response.read().decode("utf-8"))
-        return body["message"]["content"]
+        try:
+            with urlopen(request, timeout=120) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except URLError as error:
+            raise RuntimeError(
+                f"Cannot connect to Ollama at {self._settings.ollama_base_url}. "
+                "Make sure Ollama is running."
+            ) from error
+        except TimeoutError as error:
+            raise RuntimeError(
+                f"Ollama request timed out after 120 seconds at "
+                f"{self._settings.ollama_base_url}."
+            ) from error
+        except json.JSONDecodeError as error:
+            raise RuntimeError(
+                "Ollama returned an invalid JSON response. "
+                "The server may be misconfigured or experiencing issues."
+            ) from error
+        try:
+            return body["message"]["content"]
+        except (KeyError, TypeError) as error:
+            raise RuntimeError(
+                "Ollama returned an unexpected response structure. "
+                "The response did not contain a 'message.content' field."
+            ) from error

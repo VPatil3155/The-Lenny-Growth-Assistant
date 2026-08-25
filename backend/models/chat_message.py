@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Text, Uuid, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -18,6 +18,7 @@ class ChatMessage(Base):
             "role IN ('user', 'assistant', 'system')",
             name="ck_chat_messages_role",
         ),
+        Index("ix_chat_messages_session_id", "session_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

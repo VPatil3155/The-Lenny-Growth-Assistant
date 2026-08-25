@@ -18,8 +18,8 @@ class GenerateArtifactRequest(BaseModel):
     """Payload for one artifact generation request."""
 
     artifact_type: ArtifactType
-    topic: str = Field(min_length=1)
-    additional_context: str | None = None
+    topic: str = Field(min_length=1, max_length=500)
+    additional_context: str | None = Field(default=None, max_length=2000)
 
 
 class ArtifactResponse(BaseModel):

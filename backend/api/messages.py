@@ -32,7 +32,7 @@ def create_chat_message(
     """Send a user message and return the generated, persisted assistant reply."""
 
     try:
-        user_message, assistant_message = ChatOrchestrator(db).create_response(
+        user_message, assistant_message, updated_session = ChatOrchestrator(db).create_response(
             session_id, payload.content
         )
     except SessionNotFoundError:
@@ -46,6 +46,7 @@ def create_chat_message(
     return ChatTurnResponse(
         user_message=user_message,
         assistant_message=assistant_message,
+        session=updated_session,
     )
 
 

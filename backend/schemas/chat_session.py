@@ -12,6 +12,12 @@ class CreateSessionRequest(BaseModel):
     title: str | None = Field(default=None, max_length=255)
 
 
+class UpdateSessionRequest(BaseModel):
+    """Payload used to update a chat session."""
+
+    title: str = Field(min_length=1, max_length=255)
+
+
 class SessionResponse(BaseModel):
     """Public representation of a chat session."""
 

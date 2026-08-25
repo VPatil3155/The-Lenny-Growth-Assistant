@@ -45,9 +45,10 @@ class TestChatOrchestrator(unittest.TestCase):
         )
         provider = Mock()
         provider.generate_response.return_value = assistant_message.content
+        chat_session = SimpleNamespace(title="Untitled Session")
 
         with (
-            patch("services.chat_orchestrator.get_session", return_value=object()),
+            patch("services.chat_orchestrator.get_session", return_value=chat_session),
             patch(
                 "services.chat_orchestrator.create_message",
                 side_effect=[user_message, assistant_message],
@@ -57,10 +58,12 @@ class TestChatOrchestrator(unittest.TestCase):
                 return_value=[previous_user, previous_assistant, user_message],
             ) as get_messages,
             patch("services.chat_orchestrator.get_llm_provider", return_value=provider),
+            patch("services.chat_orchestrator.get_rag_index") as mock_rag,
         ):
+            mock_rag.return_value.retrieve.return_value = []
             result = ChatOrchestrator(db).create_response(session_id, user_message.content)
 
-        self.assertEqual(result, (user_message, assistant_message))
+        self.assertEqual(result, (user_message, assistant_message, chat_session))
         get_messages.assert_called_once_with(db, session_id)
         provider.generate_response.assert_called_once_with(
             [
@@ -94,7 +97,9 @@ class TestChatOrchestrator(unittest.TestCase):
             ) as create_message,
             patch("services.chat_orchestrator.get_messages", return_value=[]),
             patch("services.chat_orchestrator.get_llm_provider", return_value=provider),
+            patch("services.chat_orchestrator.get_rag_index") as mock_rag,
         ):
+            mock_rag.return_value.retrieve.return_value = []
             with self.assertRaises(LLMProviderError):
                 ChatOrchestrator(Mock()).create_response(session_id, "Hi")
 
@@ -108,7 +113,7 @@ class TestChatOrchestrator(unittest.TestCase):
         with patch.object(
             ChatOrchestrator,
             "create_response",
-            return_value=(user_message, assistant_message),
+            return_value=(user_message, assistant_message, None),
         ):
             response = create_chat_message(
                 session_id, CreateMessageRequest(content="Hello"), Mock()
@@ -117,6 +122,7 @@ class TestChatOrchestrator(unittest.TestCase):
         self.assertEqual(response.user_message.id, user_message.id)
         self.assertEqual(response.assistant_message.id, assistant_message.id)
         self.assertEqual(response.assistant_message.content, assistant_message.content)
+        self.assertIsNone(response.session)
 
     def test_endpoint_maps_missing_session_to_404(self):
         with patch.object(

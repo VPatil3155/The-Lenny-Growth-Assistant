@@ -4,13 +4,15 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from schemas.chat_session import SessionResponse
 
 
 class CreateMessageRequest(BaseModel):
     """Payload used to send a user message to an existing chat session."""
 
-    content: str
+    content: str = Field(min_length=1, max_length=10000)
     role: Literal["user"] = "user"
 
 
@@ -31,3 +33,4 @@ class ChatTurnResponse(BaseModel):
 
     user_message: MessageResponse
     assistant_message: MessageResponse
+    session: SessionResponse | None = None

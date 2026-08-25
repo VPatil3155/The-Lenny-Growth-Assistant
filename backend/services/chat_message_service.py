@@ -9,14 +9,22 @@ from models.chat_message import ChatMessage
 
 
 def create_message(
-    db: Session, session_id: UUID, role: str, content: str
+    db: Session, session_id: UUID, role: str, content: str, *, commit: bool = True
 ) -> ChatMessage:
-    """Create and persist a message in a chat session."""
+    """Create and persist a message in a chat session.
+
+    When *commit* is ``True`` (the default), the change is committed
+    immediately.  When ``False``, only a ``flush`` is performed so the
+    caller can batch multiple writes in a single transaction.
+    """
 
     message = ChatMessage(session_id=session_id, role=role, content=content)
     db.add(message)
-    db.commit()
-    db.refresh(message)
+    if commit:
+        db.commit()
+        db.refresh(message)
+    else:
+        db.flush()
     return message
 
 

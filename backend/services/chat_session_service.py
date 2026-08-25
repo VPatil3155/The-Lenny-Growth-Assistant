@@ -45,3 +45,16 @@ def delete_session(db: Session, session_id: UUID) -> bool:
     db.delete(chat_session)
     db.commit()
     return True
+
+
+def update_session(db: Session, session_id: UUID, title: str) -> ChatSession | None:
+    """Update a chat session's title and return it, or None if not found."""
+
+    chat_session = get_session(db, session_id)
+    if chat_session is None:
+        return None
+
+    chat_session.title = title
+    db.commit()
+    db.refresh(chat_session)
+    return chat_session

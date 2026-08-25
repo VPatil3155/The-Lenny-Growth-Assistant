@@ -6,12 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from schemas.chat_session import CreateSessionRequest, SessionResponse
+from schemas.chat_session import CreateSessionRequest, SessionResponse, UpdateSessionRequest
 from services.chat_session_service import (
     create_session,
     delete_session,
     get_all_sessions,
     get_session,
+    update_session,
 )
 
 
@@ -49,6 +50,23 @@ def get_chat_session(
             detail="Session not found.",
         )
     return chat_session
+
+
+@router.patch("/{session_id}", response_model=SessionResponse)
+def update_chat_session(
+    session_id: UUID,
+    payload: UpdateSessionRequest,
+    db: Session = Depends(get_db),
+) -> SessionResponse:
+    """Update a chat session's title."""
+
+    updated = update_session(db, session_id, payload.title)
+    if updated is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found.",
+        )
+    return updated
 
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
